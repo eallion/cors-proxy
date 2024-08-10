@@ -1,13 +1,3 @@
-crossorigin.me
-==============
-[![Build
-Status](https://travis-ci.org/technoboy10/crossorigin.me.svg?branch=v2)](https://travis-ci.org/technoboy10/crossorigin.me)
+# CORS-PROXY
 
-[![Join the chat at https://gitter.im/technoboy10/crossorigin.me](https://badges.gitter.im/technoboy10/crossorigin.me.svg)](https://gitter.im/technoboy10/crossorigin.me?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-[![Follow on twitter](https://img.shields.io/badge/twitter-%40corsproxy-blue.svg)](https://twitter.com/corsproxy)
-[![Support me on patreon!](https://img.shields.io/badge/support-patreon-green.svg)](https://patreon.com/corsproxy)
-[![Donate bitcoin to support crossorigin.me](https://img.shields.io/badge/donate-bitcoin-yellow.svg)](https://coinbase.com/technoboy10)
-
-crossorigin.me is a CORS proxy. It lets developers (like you!) access resources from other sites that don't have CORS enabled on their server. See [the website](https://crossorigin.me) for more information.
-
-
+A simple CORS proxy build with [TypeScript](https://typescriptlang.org) & [bun](https://bun.sh), forked from [crossorigin.me](https://github.com/hyperobject/crossorigin.me), powered by ♥️ & [DeepSeek Coder](https://github.com/deepseek-ai/DeepSeek-Coder-V2) in 2024.
