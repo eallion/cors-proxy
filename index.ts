@@ -10,6 +10,7 @@ app.use(cors());
 
 const MINUTE_MAX_REQUESTS = 20;
 const SIX_HOURS_MAX_REQUESTS = 500;
+const MAX_SIZE = 1 * 1000 * 1000;
 const TOO_LARGE_RESPONSE = {
 	code: 413,
 	message: "Response data is too large",
@@ -60,29 +61,26 @@ app.get("/*", minuteLimiter, sixHourLimiter, async (req: Request, res: Response)
 	}
 
 	try {
-		const response = await axios.get(targetUrl, {
-			transformResponse: [function (data) {
-				const dataSizeInMB = Buffer.byteLength(data) / 1000 / 1000;
-				if (dataSizeInMB > 1) {
-					throw new Error("413");
-				}
-				return data;
-			}]
-		});
+		const response = await axios.get(targetUrl)
 		//@ts-ignore
-		if ((response.headers.getContentType() as string).startsWith("text/html")) {
+		if (!(response.headers.getContentType() as string).startsWith("application/json")) {
 			return res.status(400).json({
 				code: 400,
 				message: "Bad request",
-				details: "The response data is in HTML format, which is not allowed in order to prevent abuse."
+				details: "The response data is not in JSON format, which is not allowed in order to prevent abuse. We only accept API request proxy."
 			});
 		}
-		res.send(response.data);
-	} catch (error: any) {
-		if (error.message === "413") {
-			return res.status(413).json(TOO_LARGE_RESPONSE);
+		try {
+			if (response.data.toString().length > MAX_SIZE) {
+				return res.status(413).json(TOO_LARGE_RESPONSE);
+			}
 		}
-		res.status(500).json({
+		catch (error: any) {
+			return res.send(response.data);
+		}
+		return res.send(response.data);
+	} catch (error: any) {
+		return res.status(500).json({
 			code: 500,
 			message: "Internal server error",
 			details: "Error fetching the URL"
