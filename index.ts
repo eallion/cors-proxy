@@ -2,6 +2,7 @@ import express, { Request, Response } from "express";
 import cors from "cors";
 import axios from "axios";
 import rateLimit from "express-rate-limit";
+import { GracefulShutdownManager } from "@moebius/http-graceful-shutdown";
 
 const app = express();
 const port = process.env.PORT || 12712;
@@ -61,21 +62,21 @@ app.get("/*", minuteLimiter, sixHourLimiter, async (req: Request, res: Response)
 	}
 
 	try {
-		const response = await axios.get(targetUrl)
+		const response = await axios.get(targetUrl);
 		//@ts-ignore
 		if (!(response.headers.getContentType() as string).startsWith("application/json")) {
 			return res.status(400).json({
 				code: 400,
 				message: "Bad request",
-				details: "The response data is not in JSON format, which is not allowed in order to prevent abuse. We only accept API request proxy."
+				details:
+					"The response data is not in JSON format, which is not allowed in order to prevent abuse. We only accept API request proxy."
 			});
 		}
 		try {
 			if (response.data.toString().length > MAX_SIZE) {
 				return res.status(413).json(TOO_LARGE_RESPONSE);
 			}
-		}
-		catch (error: any) {
+		} catch (error: any) {
 			return res.send(response.data);
 		}
 		return res.send(response.data);
@@ -88,6 +89,26 @@ app.get("/*", minuteLimiter, sixHourLimiter, async (req: Request, res: Response)
 	}
 });
 
-app.listen(port, () => {
+const server = app.listen(port, () => {
 	console.log(`CORS proxy server is running at http://localhost:${port}`);
+});
+
+const shutdownManager = new GracefulShutdownManager(server);
+
+process.on("SIGTERM", () => {
+	shutdownManager.terminate(() => {
+		console.log("Server is gracefully terminated");
+	});
+});
+
+process.on("uncaughtException", (err) => {
+	shutdownManager.terminate(() => {
+		console.log("Server is gracefully terminated");
+	});
+});
+
+process.on("unhandledRejection", (reason, promise) => {
+	shutdownManager.terminate(() => {
+		console.log("Server is gracefully terminated");
+	});
 });
