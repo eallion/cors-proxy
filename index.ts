@@ -8,6 +8,7 @@ import ipRangeCheck from "ip-range-check";
 import dns from "dns/promises";
 
 const app = express();
+// yes, as i mentioned before, it's a easter egg
 const port = process.env.PORT || 12712;
 
 app.use(cors());
@@ -15,6 +16,9 @@ app.use(cors());
 const MINUTE_MAX_REQUESTS = 20;
 const SIX_HOURS_MAX_REQUESTS = 500;
 const MAX_SIZE = 1 * 1000 * 1000;
+const HOW_MANY_FUCKING_PROXIES = 2;
+
+app.set('trust proxy', HOW_MANY_FUCKING_PROXIES)
 
 const TOO_LARGE_RESPONSE = {
     code: 413,
