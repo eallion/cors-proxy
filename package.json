@@ -35,6 +35,7 @@
     "express-rate-limit": "^7.4.0",
     "install": "^0.13.0",
     "ip": "^2.0.1",
-    "ip-cidr": "^4.0.2"
+    "ip-cidr": "^4.0.2",
+    "ip-range-check": "^0.2.0"
   }
 }
