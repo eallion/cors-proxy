@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  cors-proxy:
+    build: .
+    ports:
+      - "12712:12712"
+    environment:
+      - NODE_ENV=production
+    volumes:
+      - .:/app
+    command: ["bun", "start"]
+
+volumes:
+  node_modules:
