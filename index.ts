@@ -10,13 +10,14 @@ import dns from "dns/promises";
 const app = express();
 // yes, as i mentioned before, it's a easter egg
 const port = process.env.PORT || 12712;
-
-app.use(cors());
-
 const MINUTE_MAX_REQUESTS = 20;
 const SIX_HOURS_MAX_REQUESTS = 500;
 const MAX_SIZE = 1 * 1000 * 1000;
 const HOW_MANY_FUCKING_PROXIES = 2;
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+
+app.use(cors());
+app.use(express.json({ limit: MAX_SIZE })); // Parse JSON payloads
 
 app.set("trust proxy", HOW_MANY_FUCKING_PROXIES);
 
@@ -153,7 +154,59 @@ app.get("/*", minuteLimiter, sixHourLimiter, async (req: Request, res: Response)
 		return res.status(500).json({
 			code: 500,
 			message: "Internal server error",
-			details: "Error fetching the URL"
+			details: `${error.code}: ${error.message}`
+		})
+	}
+});
+
+app.post("/*", minuteLimiter, sixHourLimiter, async (req: Request, res: Response) => {
+	const targetUrl = req.path.slice(1);
+
+	if (!targetUrl) {
+		return res.status(400).json(MISSING_URL_PARAM);
+	}
+
+	try {
+		const parsedUrl = new URL(targetUrl);
+		const hostname = parsedUrl.hostname;
+
+		// Perform DNS resolution
+		const addresses = await dns.resolve4(hostname).catch(() => []);
+		const ipv6Addresses = await dns.resolve6(hostname).catch(() => []);
+
+		// Combine all IP addresses
+		const allAddresses = [...addresses, ...ipv6Addresses];
+
+		// Check if any resolved IP address falls within blocked ranges
+		const isBlocked = allAddresses.some((address) => ipRangeCheck(address, blockedRanges));
+
+		if (hostname === "localhost" || isBlocked) {
+			return res.status(403).json(ACCESS_DENIED);
+		}
+	} catch {}
+
+	try {
+		const response = await axios.post(targetUrl, req.body, {
+			headers: req.headers as any,
+			maxRedirects: 0
+		});
+		//@ts-ignore
+		if (!(response.headers.getContentType() as string).startsWith("application/json")) {
+			return res.status(400).json(TYPE_NOT_ALLOED);
+		}
+		try {
+			if (response.data.toString().length > MAX_SIZE) {
+				return res.status(413).json(TOO_LARGE_RESPONSE);
+			}
+		} catch (error: any) {
+			return res.send(response.data);
+		}
+		return res.send(response.data);
+	} catch (error: any) {
+		return res.status(500).json({
+			code: 500,
+			message: "Internal server error",
+			details: `${error.code}: ${error.message}`
 		});
 	}
 });
